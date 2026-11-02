@@ -1,3 +1,4 @@
+
 name: Smart URL Shortener - CI/CD
 
 on:
@@ -11,11 +12,12 @@ permissions:
   contents: read
 
 jobs:
-    test:
+  test:
     name: Test application
     runs-on: ubuntu-latest
     env:
       AWS_DEFAULT_REGION: ap-south-1
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,11 +44,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.event_name != 'pull_request'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Resolve Environment and Stack Name
+      - name: Resolve Environment & Stack Name
         shell: bash
         run: |
           case "${GITHUB_REF_NAME}" in
@@ -66,10 +69,12 @@ jobs:
           esac
 
           STACK_NAME="smart-url-shortener-${TARGET_ENV}"
-          echo "Target Environment: ${TARGET_ENV}"
-          echo "Stack Name: ${STACK_NAME}"
-          echo "TARGET_ENV=${TARGET_ENV}" >> "$GITHUB_ENV"
-          echo "STACK_NAME=${STACK_NAME}" >> "$GITHUB_ENV"
+
+          echo "Target Environment: $TARGET_ENV"
+          echo "Stack Name: $STACK_NAME"
+
+          echo "TARGET_ENV=$TARGET_ENV" >> "$GITHUB_ENV"
+          echo "STACK_NAME=$STACK_NAME" >> "$GITHUB_ENV"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
