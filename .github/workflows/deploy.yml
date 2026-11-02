@@ -16,7 +16,7 @@ jobs:
     name: Test application
     runs-on: ubuntu-latest
     env:
-      AWS_DEFAULT_REGION: ap-south-1
+      AWS_DEFAULT_REGION: us-east-1
 
     steps:
       - name: Checkout code
@@ -81,7 +81,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ vars.AWS_REGION || 'ap-south-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Set up AWS SAM CLI
         uses: aws-actions/setup-sam@v2
@@ -96,7 +96,7 @@ jobs:
           sam deploy \
             --stack-name "${STACK_NAME}" \
             --resolve-s3 \
-            --region "${{ vars.AWS_REGION || 'ap-south-1' }}" \
+            --region "${{ vars.AWS_REGION || 'us-east-1' }}" \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
