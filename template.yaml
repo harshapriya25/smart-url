@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Smart URL Shortener with click analytics
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 10
+    MemorySize: 128
+    Environment:
+      Variables:
+        URLS_TABLE: !Ref UrlsTable
+        APP_ENV: !Ref Environment
+
+Resources:
+  UrlsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub smart-urls-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: code
+          AttributeType: S
+      KeySchema:
+        - AttributeName: code
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  UrlShortenerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: app.lambda_handler
+      Description: Create short links, redirect visitors and return click analytics
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UrlsTable
+      Events:
+        Shorten:
+          Type: Api
+          Properties:
+            Path: /shorten
+            Method: post
+        Redirect:
+          Type: Api
+          Properties:
+            Path: /{code}
+            Method: get
+        Analytics:
+          Type: Api
+          Properties:
+            Path: /stats/{code}
+            Method: get
+        Options:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: options
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint for this environment
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+  DynamoDBTable:
+    Description: DynamoDB table used by this environment
+    Value: !Ref UrlsTable
+  EnvironmentName:
+    Description: Deployment environment
+    Value: !Ref Environment

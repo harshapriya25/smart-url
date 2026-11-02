@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart URL Shortener</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: Arial, sans-serif; color: #182230;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc); display: grid; place-items: center; padding: 24px; }
+    main { width: min(720px, 100%); background: white; border-radius: 20px; padding: 34px;
+      box-shadow: 0 18px 55px #1e293b18; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    .muted { color: #64748b; line-height: 1.5; }
+    label { display: block; margin: 24px 0 8px; font-weight: 700; }
+    input { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 16px; }
+    button { border: 0; border-radius: 10px; padding: 13px 18px; background: #4f46e5; color: white;
+      font-weight: 700; cursor: pointer; margin-top: 12px; }
+    button.secondary { background: #e2e8f0; color: #1e293b; margin-left: 8px; }
+    button:hover { opacity: .9; }
+    .result, .analytics { margin-top: 22px; padding: 18px; border-radius: 12px; background: #f1f5f9; overflow-wrap: anywhere; }
+    .hidden { display: none; }
+    a { color: #4338ca; }
+    .error { color: #b91c1c; }
+    .count { font-size: 34px; font-weight: 800; margin-top: 8px; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Smart URL Shortener</h1>
+  <p class="muted">Turn long links into short links and track how many times they are opened.</p>
+
+  <label for="longUrl">Paste your long URL</label>
+  <input id="longUrl" type="url" placeholder="https://example.com/my/very/long/link">
+  <button id="shortenBtn">Create short URL</button>
+
+  <div id="message" class="muted" role="status"></div>
+  <section id="result" class="result hidden">
+    <strong>Your short URL</strong>
+    <p><a id="shortLink" href="#" target="_blank" rel="noopener"></a></p>
+    <button id="copyBtn">Copy link</button>
+    <button id="statsBtn" class="secondary">View analytics</button>
+  </section>
+
+  <section id="analytics" class="analytics hidden">
+    <strong>Click analytics</strong>
+    <div id="clickCount" class="count">0</div>
+    <div class="muted">Total clicks recorded</div>
+    <p id="originalUrl"></p>
+  </section>
+
+  <p class="muted" style="font-size:12px;margin-top:28px">
+    Setup: set API_BASE_URL in this file to your deployed API Gateway URL.
+  </p>
+</main>
+<script>
+  // After deployment, paste the ApiUrl output from the CloudFormation stack here.
+  const API_BASE_URL = "PASTE_API_GATEWAY_URL_HERE".replace(/\/$/, "");
+  let latestCode = "";
+
+  const message = document.getElementById("message");
+  const result = document.getElementById("result");
+  const analytics = document.getElementById("analytics");
+
+  document.getElementById("shortenBtn").addEventListener("click", async () => {
+    const url = document.getElementById("longUrl").value.trim();
+    if (!API_BASE_URL || API_BASE_URL.includes("PASTE_API")) {
+      message.textContent = "Configure API_BASE_URL in frontend/index.html after deployment.";
+      message.className = "error";
+      return;
+    }
+    if (!url) {
+      message.textContent = "Please enter a URL.";
+      message.className = "error";
+      return;
+    }
+    message.textContent = "Creating your short link...";
+    message.className = "muted";
+    try {
+      const res = await fetch(`${API_BASE_URL}/shorten`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not create link");
+      latestCode = data.code;
+      document.getElementById("shortLink").href = data.short_url;
+      document.getElementById("shortLink").textContent = data.short_url;
+      result.classList.remove("hidden");
+      analytics.classList.add("hidden");
+      message.textContent = "Short link created successfully.";
+    } catch (err) {
+      message.textContent = err.message;
+      message.className = "error";
+    }
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+    await navigator.clipboard.writeText(document.getElementById("shortLink").textContent);
+    message.textContent = "Short link copied.";
+    message.className = "muted";
+  });
+
+  document.getElementById("statsBtn").addEventListener("click", async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/stats/${latestCode}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not load analytics");
+      document.getElementById("clickCount").textContent = data.clicks;
+      document.getElementById("originalUrl").textContent = `Original URL: ${data.original_url}`;
+      analytics.classList.remove("hidden");
+    } catch (err) {
+      message.textContent = err.message;
+      message.className = "error";
+    }
+  });
+</script>
+</body>
+</html>
