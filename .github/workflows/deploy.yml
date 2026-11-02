@@ -11,9 +11,11 @@ permissions:
   contents: read
 
 jobs:
-  test:
+    test:
     name: Test application
     runs-on: ubuntu-latest
+    env:
+      AWS_DEFAULT_REGION: ap-south-1
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
