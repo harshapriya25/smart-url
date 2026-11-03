@@ -9,7 +9,9 @@ on:
 
 permissions:
   contents: read
-
+  env:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_REGION: us-east-1
 jobs:
   test:
     name: Test application
